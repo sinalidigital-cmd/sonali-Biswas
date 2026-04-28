@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rajesh Digital 24 | Final Fixed</title>
+    <title>Rajesh Digital 24 | Full Data Backup</title>
     
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     
@@ -17,17 +17,18 @@
         .entry-box { background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         label { font-weight: bold; font-size: 13px; color: #444; display: block; margin-bottom: 5px; }
         input, select { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; box-sizing: border-box; font-size: 15px; }
-        .btn-money-submit { background: #4f46e5; color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; font-size: 16px; }
+        .btn-money-submit { background: #4f46e5; color: white; width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; font-size: 16px; width: 100%; }
         .action-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; border-top: 2px dashed #ddd; padding-top: 20px; }
         .act-btn { padding: 12px 5px; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
         .filter-panel { background: #fffbeb; padding: 15px; border-radius: 10px; border: 1px solid #fde68a; margin-bottom: 20px; }
-        .btn-dl { width: 100%; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .dl-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn-dl { flex: 1; min-width: 140px; padding: 12px; border: none; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
         th, td { padding: 10px; text-align: left; border: 1px solid #e2e8f0; font-size: 12px; }
         th { background: #f1f5f9; color: #1e3a8a; }
     </style>
 </head>
-<body onload="initApp()">
+<body onload="startApp()">
 
 <div class="app-card">
     <div style="text-align:center; padding:15px; border-bottom:1px solid #eee;">
@@ -36,7 +37,7 @@
 
     <div class="main-content">
         <div class="entry-box">
-            <label>📅 ডাটা সেভের তারিখ:</label>
+            <label>📅 তারিখ বাছুন:</label>
             <input type="date" id="targetDate">
             
             <label>👤 স্টাফের নাম:</label>
@@ -50,28 +51,33 @@
             <label>💰 জমা টাকা (যদি থাকে):</label>
             <input type="number" id="takenMoney" placeholder="০">
             
-            <button onclick="saveRecord('টাকা জমা')" class="btn-money-submit">টাকা জমা করুন</button>
+            <button onclick="saveNow('টাকা জমা')" class="btn-money-submit">টাকা জমা করুন</button>
 
             <div class="action-grid">
-                <button onclick="saveRecord('IN')" class="act-btn" style="background:var(--p-green);">IN</button>
-                <button onclick="saveRecord('OUT')" class="act-btn" style="background:#64748b);">OUT</button>
-                <button onclick="saveRecord('HALF DAY')" class="act-btn" style="background:#f59e0b;">HALF</button>
-                <button onclick="saveRecord('LEAVE')" class="act-btn" style="background:var(--p-red);">LEAVE</button>
+                <button onclick="saveNow('IN')" class="act-btn" style="background:var(--p-green);">IN</button>
+                <button onclick="saveNow('OUT')" class="act-btn" style="background:#64748b);">OUT</button>
+                <button onclick="saveNow('HALF DAY')" class="act-btn" style="background:#f59e0b;">HALF</button>
+                <button onclick="saveNow('LEAVE')" class="act-btn" style="background:var(--p-red);">LEAVE</button>
             </div>
         </div>
 
         <div class="filter-panel">
-            <label>📅 আগের ডাটা দেখতে ও ডাউনলোড করতে তারিখ বাছুন:</label>
-            <input type="date" id="viewDate" onchange="displayTable()">
+            <label>📅 ডাটা দেখতে ফিল্টার করুন:</label>
+            <select id="viewFilter" onchange="showTable()">
+                <option value="TODAY">শুধুমাত্র আজকের ডাটা</option>
+                <option value="ALL">সব ডাটা একবারে দেখুন (পুরো মাসের জন্য)</option>
+            </select>
             
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-dl" style="background:#166534;" onclick="exportExcel()">📊 Excel</button>
-                <button class="btn-dl" style="background:#e11d48;" onclick="exportPDF()">📄 PDF</button>
+            <input type="date" id="viewDate" onchange="showTable()" style="margin-top: 10px;">
+            
+            <div class="dl-btns">
+                <button class="btn-dl" style="background:#166534;" onclick="downloadExcel()">📊 EXCEL ডাউনলোড</button>
+                <button class="btn-dl" style="background:#e11d48;" onclick="downloadPDF()">📄 PDF ডাউনলোড</button>
             </div>
         </div>
 
         <div style="overflow-x: auto;">
-            <table id="masterTable">
+            <table id="myTable">
                 <thead>
                     <tr>
                         <th>তারিখ</th>
@@ -88,83 +94,89 @@
 </div>
 
 <script>
-    function initApp() {
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('targetDate').value = today;
-        document.getElementById('viewDate').value = today;
-        displayTable();
+    function startApp() {
+        const d = new Date().toISOString().split('T')[0];
+        document.getElementById('targetDate').value = d;
+        document.getElementById('viewDate').value = d;
+        showTable();
     }
 
-    function saveRecord(status) {
-        const date = document.getElementById('targetDate').value;
-        const name = document.getElementById('staffName').value;
-        const money = document.getElementById('takenMoney').value || "0";
+    function saveNow(st) {
+        const dt = document.getElementById('targetDate').value;
+        const nm = document.getElementById('staffName').value;
+        const mn = document.getElementById('takenMoney').value || "0";
 
-        if(!name) { alert("নাম বাছুন!"); return; }
+        if(!nm) { alert("স্টাফ সিলেক্ট করুন"); return; }
 
-        const entry = {
-            date: date,
-            name: name,
-            money: money,
-            time: new Date().toLocaleTimeString(),
-            status: status
-        };
-
-        let db = JSON.parse(localStorage.getItem('rajesh_ledger_final_v25')) || [];
-        db.unshift(entry);
-        localStorage.setItem('rajesh_ledger_final_v25', JSON.stringify(db));
+        const entry = { dt, nm, mn, tm: new Date().toLocaleTimeString(), st };
+        let data = JSON.parse(localStorage.getItem('rajesh_v40_final')) || [];
+        data.push(entry); // নতুন ডাটা শেষে যোগ হবে যাতে ক্রমানুসারে থাকে
+        localStorage.setItem('rajesh_v40_final', JSON.stringify(data));
 
         document.getElementById('takenMoney').value = "";
-        document.getElementById('viewDate').value = date; // যে তারিখে সেভ হলো সেটাই দেখাবে
-        displayTable();
-        alert(status + " সেভ হয়েছে!");
+        showTable();
+        alert("সফলভাবে সেভ হয়েছে!");
     }
 
-    function displayTable() {
-        const filterDate = document.getElementById('viewDate').value;
-        const db = JSON.parse(localStorage.getItem('rajesh_ledger_final_v25')) || [];
+    function showTable() {
+        const fDt = document.getElementById('viewDate').value;
+        const mode = document.getElementById('viewFilter').value;
+        const data = JSON.parse(localStorage.getItem('rajesh_v40_final')) || [];
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = "";
 
-        const filtered = db.filter(item => item.date === filterDate);
+        let filtered = data;
+        if(mode === "TODAY") {
+            filtered = data.filter(x => x.dt === fDt);
+            document.getElementById('viewDate').style.display = "block";
+        } else {
+            document.getElementById('viewDate').style.display = "none";
+        }
+
         if(filtered.length === 0) {
-            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>ডাটা নেই</td></tr>";
+            tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>কোনো ডাটা পাওয়া যায়নি</td></tr>";
             return;
         }
 
-        filtered.forEach(item => {
+        filtered.forEach(x => {
             tbody.innerHTML += `<tr>
-                <td>${item.date}</td>
-                <td>${item.name}</td>
-                <td>₹${item.money}</td>
-                <td>${item.time}</td>
-                <td>${item.status}</td>
+                <td>${x.dt}</td>
+                <td>${x.nm}</td>
+                <td>₹${x.mn}</td>
+                <td>${x.tm}</td>
+                <td>${x.st}</td>
             </tr>`;
         });
     }
 
-    // এক্সেল ডাউনলোড ফিক্স
-    function exportExcel() {
-        try {
-            if (typeof XLSX === 'undefined') {
-                alert("লাইব্রেরি লোড হচ্ছে, ৫ সেকেন্ড পর আবার চেষ্টা করুন।");
-                return;
-            }
-            const table = document.getElementById("masterTable");
-            const workbook = XLSX.utils.table_to_book(table);
-            XLSX.writeFile(workbook, ⁠ Report_${document.getElementById('viewDate').value}.xlsx ⁠);
-        } catch (e) { alert("Error: " + e.message); }
+    function downloadExcel() {
+        const table = document.getElementById("myTable");
+        const workbook = XLSX.utils.table_to_book(table);
+        const fileName = document.getElementById('viewFilter').value === "ALL" ? "Full_Report.xlsx" : ⁠ Report_${document.getElementById('viewDate').value}.xlsx ⁠;
+        XLSX.writeFile(workbook, fileName);
     }
 
-    // পিডিএফ ডাউনলোড ফিক্স
-    function exportPDF() {
-        try {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            doc.text("Rajesh Digital 24 - Report", 14, 15);
-            doc.autoTable({ html: '#masterTable', startY: 20 });
-            doc.save(⁠ Report_${document.getElementById('viewDate').value}.pdf ⁠);
-        } catch (e) { alert("PDF Error: লাইব্রেরি লোড হতে দেরি হচ্ছে।"); }
+    function downloadPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const title = document.getElementById('viewFilter').value === "ALL" ? "Full Report - Rajesh Digital 24" : "Daily Report - Rajesh Digital 24";
+        
+        doc.setFontSize(18);
+        doc.text(title, 40, 40);
+        
+        doc.autoTable({
+            html: '#myTable',
+            startY: 60,
+            theme: 'grid',
+            styles: { fontSize: 10, cellPadding: 8 },
+            headStyles: { fillColor: [30, 68, 209] },
+            margin: { top: 60, bottom: 40 },
+            didDrawPage: function (data) {
+                doc.setFontSize(8);
+                doc.text("Page " + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 20);
+            }
+        });
+        doc.save(title + ".pdf");
     }
 </script>
 
