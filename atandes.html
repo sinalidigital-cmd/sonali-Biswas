@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance | Rajesh Digital 24</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --p-blue: #1e44d1; --p-red: #d9411e; --gold: #f59e0b; --bg: #f1f5f9; }
+        body { font-family: 'Arial', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
+        
+        .app-card { max-width: 650px; margin: 0 auto; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; border-top: 6px solid var(--p-blue); }
+        .header { background: #fff; padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
+        
+        .info-box { background: linear-gradient(135deg, #1e3a8a, #1e44d1); color: white; padding: 15px; text-align: center; border-radius: 12px; margin: 15px; }
+        #clock { font-size: 24px; font-weight: bold; margin-bottom: 5px; }
+        
+        .main-content { padding: 0 20px 20px 20px; }
+        .input-area { display: flex; flex-direction: column; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; }
+        
+        /* তারিখ সিলেক্ট করার ক্যালেন্ডার ইনপুট */
+        .date-picker-area { margin: 15px 0; padding: 10px; background: #fffbeb; border-radius: 10px; border: 1px solid #fde68a; display: flex; align-items: center; justify-content: space-between; }
+        .date-picker-area input { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; }
+
+        select { padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; outline: none; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .btn { padding: 12px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.3s; }
+        
+        .btn-in { background: #22c55e; }
+        .btn-out { background: #64748b; }
+        .btn-half { background: var(--gold); }
+        .btn-leave { background: var(--p-red); }
+        .btn-bday { background: #ec4899; width: 100%; margin-top: 10px; }
+
+        .report-section { margin-top: 25px; }
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table th, .report-table td { padding: 12px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        
+        .tag { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; color: white; }
+        .tag-in { background: #22c55e; } .tag-out { background: #64748b; } .tag-half { background: var(--gold); } .tag-leave { background: var(--p-red); } .tag-bday { background: #ec4899; }
+    </style>
+</head>
+<body onload="initApp()">
+
+<div class="app-card">
+    <div class="header">
+        <h2 style="margin:0; color:var(--p-blue);">অ্যাটেনডেন্স ম্যানেজার</h2>
+        <p style="color: #666; margin: 5px 0 0;">রাজেশ ডিজিটাল ২৪</p>
+    </div>
+
+    <div class="info-box">
+        <div id="clock">00:00:00 AM</div>
+        <div id="displayDate" style="opacity: 0.9;">ক্যালেন্ডার লোড হচ্ছে...</div>
+    </div>
+
+    <div class="main-content">
+        <div class="date-picker-area">
+            <span>📅 <b>রিপোর্ট দেখতে তারিখ বাছুন:</b></span>
+            <input type="date" id="reportDate" onchange="loadData()">
+        </div>
+
+        <div class="input-area">
+            <select id="staffName">
+                <option value="">-- নাম বেছে নিন --</option>
+                <option value="Rajesh Majumdar">রাজেশ মজুমদার</option>
+                <option value="Staff 1">স্টাফ ১</option>
+                <option value="Staff 2">স্টাফ ২</option>
+            </select>
+
+            <div class="btn-grid">
+                <button class="btn btn-in" onclick="saveRecord('Present (IN)')"><i class="fas fa-check"></i> ইন</button>
+                <button class="btn btn-out" onclick="saveRecord('Exit (OUT)')"><i class="fas fa-sign-out-alt"></i> আউট</button>
+                <button class="btn btn-half" onclick="saveRecord('Half Day')"><i class="fas fa-adjust"></i> হাফ ডে</button>
+                <button class="btn btn-leave" onclick="saveRecord('On Leave')"><i class="fas fa-calendar-times"></i> ছুটি</button>
+            </div>
+            <button class="btn btn-bday" onclick="saveRecord('Birthday 🎂')"><i class="fas fa-cake-candles"></i> আজ জন্মদিন</button>
+        </div>
+
+        <div class="report-section">
+            <h3 id="reportTitle" style="font-size: 16px; color: #1e3a8a;">আজকের রিপোর্ট:</h3>
+            <div style="overflow-x: auto;">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>নাম</th>
+                            <th>সময়</th>
+                            <th>স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function initApp() {
+        // আজকের তারিখ সেট করা
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reportDate').value = today;
+        updateClock();
+        loadData();
+    }
+
+    function updateClock() {
+        const now = new Date();
+        document.getElementById('clock').innerText = now.toLocaleTimeString('en-US');
+        document.getElementById('displayDate').innerText = now.toLocaleDateString('bn-BD', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    }
+    setInterval(updateClock, 1000);
+
+    function saveRecord(status) {
+        const staff = document.getElementById('staffName').value;
+        if (!staff) { alert("নাম সিলেক্ট করুন!"); return; }
+
+        const now = new Date();
+        const time = now.toLocaleTimeString('bn-BD');
+        const date = now.toISOString().split('T')[0]; // YYYY-MM-DD ফরম্যাট
+
+        const entry = { staff, time, date, status };
+        let logs = JSON.parse(localStorage.getItem('rajesh_db')) || [];
+        logs.unshift(entry);
+        localStorage.setItem('rajesh_db', JSON.stringify(logs));
+
+        alert("রেকর্ড করা হয়েছে!");
+        loadData();
+    }
+
+    function loadData() {
+        const selectedDate = document.getElementById('reportDate').value; // ক্যালেন্ডার থেকে নেওয়া তারিখ
+        const logs = JSON.parse(localStorage.getItem('rajesh_db')) || [];
+        const table = document.getElementById('logTable');
+        table.innerHTML = "";
+
+        // টাইটেল আপডেট করা
+        document.getElementById('reportTitle').innerText = selectedDate + " এর রিপোর্ট:";
+
+        const filteredLogs = logs.filter(item => item.date === selectedDate);
+
+        if(filteredLogs.length === 0) {
+            table.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#999;'>এই তারিখে কোনো ডাটা নেই।</td></tr>";
+            return;
+        }
+
+        filteredLogs.forEach(item => {
+            let tagClass = "tag-out";
+            if(item.status.includes('Present')) tagClass = "tag-in";
+            if(item.status.includes('Half')) tagClass = "tag-half";
+            if(item.status.includes('Leave')) tagClass = "tag-leave";
+            if(item.status.includes('Birthday')) tagClass = "tag-bday";
+
+            const row = `<tr>
+                <td>${item.staff} ${item.status.includes('Birthday') ? '🎂' : ''}</td>
+                <td>${item.time}</td>
+                <td><span class="tag ${tagClass}">${item.status}</span></td>
+            </tr>`;
+            table.innerHTML += row;
+        });
+    }
+</script>
+
+</body>
+</html>
